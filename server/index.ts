@@ -89,4 +89,6 @@ app.use(async (ctx, next) => {
 app.use(cors());
 app.use(adapter);
 
+// silence to prevent koa default error logging
+app.silent = true;
 app.listen(2022);
