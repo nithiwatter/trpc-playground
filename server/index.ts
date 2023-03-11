@@ -2,9 +2,10 @@
  * This is the API-handler of your app that contains all your API routes.
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
+import cors from "@koa/cors";
 import { initTRPC } from "@trpc/server";
-import { createHTTPServer } from "@trpc/server/adapters/standalone";
-import cors from "cors";
+import Koa from "koa";
+import { createKoaMiddleware } from "trpc-koa-adapter";
 import { z } from "zod";
 
 const t = initTRPC.create();
@@ -26,7 +27,7 @@ const appRouter = router({
     .query(({ input }) => {
       // This is what you're returning to your client
       return {
-        text: `hello ${input?.name ?? "world"}`,
+        text: `hello from trpc: ${input?.name ?? "world"}`,
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
       };
     }),
@@ -37,11 +38,10 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 // create server
-createHTTPServer({
-  middleware: cors(),
+const app = new Koa();
+const adapter = createKoaMiddleware({
   router: appRouter,
-  createContext() {
-    console.log("context 3");
-    return {};
-  },
-}).listen(2022);
+});
+app.use(cors());
+app.use(adapter);
+app.listen(2022);
