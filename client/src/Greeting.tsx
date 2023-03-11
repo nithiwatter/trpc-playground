@@ -1,7 +1,20 @@
+import { useState } from "react";
 import { trpc } from "./utils/trpc";
 
 export function Greeting() {
-  const greeting = trpc.greeting.useQuery({ name: "tRPC user" });
+  const [num, setNumber] = useState(0);
 
-  return <div>{greeting.data?.text}</div>;
+  const greeting = trpc.greeting.useQuery({ name: "tRPC user" });
+  trpc.randomNumber.useSubscription(undefined, {
+    onData({ randomNumber }) {
+      setNumber(randomNumber);
+    },
+  });
+
+  return (
+    <div>
+      {greeting.data?.text}
+      <div>{num}</div>
+    </div>
+  );
 }

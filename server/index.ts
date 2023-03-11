@@ -36,8 +36,15 @@ const appRouter = router({
     }),
   randomNumber: publicProcedure.subscription(() => {
     return observable<{ randomNumber: number }>((emit) => {
+      let i = 0;
+
       const timer = setInterval(() => {
-        // emits a number every second
+        if (i > 5) {
+          clearInterval(timer);
+          return;
+        }
+
+        i++;
         emit.next({ randomNumber: Math.random() });
       }, 200);
 
@@ -60,15 +67,26 @@ const adapter = createKoaMiddleware({
 const websocketMiddleware = websocket();
 const websocketServer = websocketMiddleware.server;
 
-// http
-app.use(cors());
-app.use(adapter);
-
 // websocket
+app.use(websocketMiddleware);
 applyWSSHandler<AppRouter>({
   wss: websocketServer,
   router: appRouter,
 });
-app.use(websocketMiddleware);
+
+// need this as koa-easy-ws does not create a ws server by default - it simply emits "connection" when there is an upgrade event
+// applyWSSHandler handles attaching necessary events ex. "connection" to the ws server
+app.use(async (ctx, next) => {
+  if (ctx.ws) {
+    return await ctx.ws();
+  }
+
+  await next();
+});
+
+// http
+// NOTE: the adapter needs to be the last middleware as it does not call next()
+app.use(cors());
+app.use(adapter);
 
 app.listen(2022);
