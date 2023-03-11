@@ -4,7 +4,10 @@
  */
 import cors from "@koa/cors";
 import { initTRPC } from "@trpc/server";
+import { applyWSSHandler } from "@trpc/server/adapters/ws";
+import { observable } from "@trpc/server/observable";
 import Koa from "koa";
+import websocket from "koa-easy-ws";
 import { createKoaMiddleware } from "trpc-koa-adapter";
 import { z } from "zod";
 
@@ -31,6 +34,18 @@ const appRouter = router({
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
       };
     }),
+  randomNumber: publicProcedure.subscription(() => {
+    return observable<{ randomNumber: number }>((emit) => {
+      const timer = setInterval(() => {
+        // emits a number every second
+        emit.next({ randomNumber: Math.random() });
+      }, 200);
+
+      return () => {
+        clearInterval(timer);
+      };
+    });
+  }),
 });
 
 // export only the type definition of the API
@@ -42,6 +57,18 @@ const app = new Koa();
 const adapter = createKoaMiddleware({
   router: appRouter,
 });
+const websocketMiddleware = websocket();
+const websocketServer = websocketMiddleware.server;
+
+// http
 app.use(cors());
 app.use(adapter);
+
+// websocket
+applyWSSHandler<AppRouter>({
+  wss: websocketServer,
+  router: appRouter,
+});
+app.use(websocketMiddleware);
+
 app.listen(2022);

@@ -12,6 +12,8 @@
     "@koa/cors": "^4.0.0",
     "@trpc/server": "^10.15.0",
     "koa": "^2.14.1",
+    "koa-easy-ws": "^2.1.0",
+    "ws": "^8.13.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
